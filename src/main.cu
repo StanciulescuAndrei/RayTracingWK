@@ -2,28 +2,22 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include <iostream>
-
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 #include "glad/glad.h"
-
-#include <cuda.h>
-#include <cuda_runtime.h>
-#include <cuda_gl_interop.h>
 
 #include "cuda_common/helper_cuda.h"
 
 #include <cub/cub.cuh>
 #include <cub/util_allocator.cuh>
 
+#include "renderer.cu"
+
 
 #define SCREEN_WIDTH 800
 #define SCREEN_HEIGHT 600
 
-#define BLOCK_X 16
-#define BLOCK_Y 16
-
+#define BLOCK 256
 
 static void error_callback(int error, const char* description)
 {
@@ -80,9 +74,6 @@ int main(){
     glEnable(GL_BLEND);  
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
 
-    dim3 block(BLOCK_X, BLOCK_Y, 1); // One thread per pixel!
-    dim3 grid(SCREEN_WIDTH / BLOCK_X + 1, SCREEN_HEIGHT / BLOCK_Y + 1, 1);
-
     /* Set up resources for texture writing */
     GLuint pboId;
     GLuint texId;
@@ -110,6 +101,8 @@ int main(){
     // Prepare CUDA interop
     checkCudaErrors(cudaMalloc(&d_pbo_buffer, 4 * SCREEN_HEIGHT * SCREEN_WIDTH * sizeof(float)));
     checkCudaErrors(cudaGraphicsGLRegisterBuffer(&cuda_pbo_resource, pboId, cudaGraphicsRegisterFlagsNone));
+
+    Camera camera(glm::vec3(0.0f, 0.0f, 0.0f), 1.0f, SCREEN_WIDTH, SCREEN_HEIGHT);
     
     /* Main program loop */
     while (!glfwWindowShouldClose(window))
@@ -132,7 +125,8 @@ int main(){
         assert(dataPointer != nullptr);
 
         /* Do the rendering here */
-        
+        render<<<SCREEN_HEIGHT * SCREEN_WIDTH / BLOCK + 1, BLOCK>>>({SCREEN_WIDTH, SCREEN_HEIGHT}, dataPointer, camera);
+        checkCudaErrors(cudaDeviceSynchronize());
 
 
         /* Unmap the OpenGL resources */
