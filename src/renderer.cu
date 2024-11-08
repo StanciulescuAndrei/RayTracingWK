@@ -3,7 +3,22 @@
 #include "camera.h"
 #include "hittable.h"
 
-__global__ void render(int2 resolution, float4 * data, Camera camera){
+const int numSceneElements = 4;
+
+__global__ void populateScene(HitableList** hList, Sphere ** hittableBuffer, const int numElements){
+    if(threadIdx.x != 0 || blockIdx.x != 0){
+        return;
+    }
+    
+    hittableBuffer[0] = new Sphere(glm::vec3(0.0f, 0.0f, -1.0f), 0.5f);
+    hittableBuffer[1] = new Sphere(glm::vec3(-1.0f, 0.0f, -1.0f), 0.5f);
+    hittableBuffer[2] = new Sphere(glm::vec3(1.0f, 0.0f, -1.0f), 0.5f);
+    hittableBuffer[3] = new Sphere(glm::vec3(0.0f, -100.5f, -1.0f), 100.0f);
+
+    *hList = new HitableList(hittableBuffer, numElements);
+}
+
+__global__ void render(int2 resolution, float4 * data, Camera camera, HitableList ** hList){
     uint32_t idx = blockDim.x * blockIdx.x + threadIdx.x;
 
     int x = idx % resolution.x; // Horizontal positioning
@@ -11,12 +26,10 @@ __global__ void render(int2 resolution, float4 * data, Camera camera){
 
     if(y >= resolution.y) return;
 
-    Sphere s(glm::vec3(0.0f, 0.0f, -1.0f), 0.5f);
-
     HitRecord hitRecord;
     glm::vec3 out_color;
 
-    if(s.hit(camera.getPixelRay(x, y), 0.0f, 100000.0f, hitRecord)){
+    if(hList[0]->hit(camera.getPixelRay(x, y), 0.0f, 1000000.0f, hitRecord)){
         out_color = hitRecord.normal * 0.5f + 0.5f;
     }
     else{

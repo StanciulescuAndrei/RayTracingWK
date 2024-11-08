@@ -103,6 +103,13 @@ int main(){
     checkCudaErrors(cudaGraphicsGLRegisterBuffer(&cuda_pbo_resource, pboId, cudaGraphicsRegisterFlagsNone));
 
     Camera camera(glm::vec3(0.0f, 0.0f, 0.0f), 1.0f, SCREEN_WIDTH, SCREEN_HEIGHT);
+
+    HitableList ** hList;
+    Sphere ** hittableBuffer;
+    checkCudaErrors(cudaMalloc(&hList, sizeof(HitableList*)));
+    checkCudaErrors(cudaMalloc(&hittableBuffer, sizeof(Sphere*) * numSceneElements));
+    populateScene<<<1, 1>>>(hList, hittableBuffer, numSceneElements);
+    checkCudaErrors(cudaDeviceSynchronize());
     
     /* Main program loop */
     while (!glfwWindowShouldClose(window))
@@ -125,7 +132,7 @@ int main(){
         assert(dataPointer != nullptr);
 
         /* Do the rendering here */
-        render<<<SCREEN_HEIGHT * SCREEN_WIDTH / BLOCK + 1, BLOCK>>>({SCREEN_WIDTH, SCREEN_HEIGHT}, dataPointer, camera);
+        render<<<SCREEN_HEIGHT * SCREEN_WIDTH / BLOCK + 1, BLOCK>>>({SCREEN_WIDTH, SCREEN_HEIGHT}, dataPointer, camera, hList);
         checkCudaErrors(cudaDeviceSynchronize());
 
 
