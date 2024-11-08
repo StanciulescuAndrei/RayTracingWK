@@ -110,6 +110,11 @@ int main(){
     checkCudaErrors(cudaMalloc(&hittableBuffer, sizeof(Sphere*) * numSceneElements));
     populateScene<<<1, 1>>>(hList, hittableBuffer, numSceneElements);
     checkCudaErrors(cudaDeviceSynchronize());
+
+    size_t limit;
+    cudaDeviceGetLimit(&limit, cudaLimitStackSize);
+    printf("Stack limit: %d\n", limit);
+    checkCudaErrors(cudaDeviceSetLimit(cudaLimitStackSize, 8 * 1024));
     
     /* Main program loop */
     while (!glfwWindowShouldClose(window))
