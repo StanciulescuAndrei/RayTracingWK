@@ -18,7 +18,7 @@ class Ray{
 
         __device__ __host__ const glm::vec3& origin() const {return orig;}
 
-        __device__ __host__ glm::vec3 at(float t) {return orig + t * dir;}
+        __device__ __host__ glm::vec3 at(float t) const {return orig + t * dir;}
 
 
     private:
