@@ -1,8 +1,8 @@
 #include <curand_kernel.h>
 #include "camera.h"
 #include "hittable.h"
+#include "material.cuh"
 #include <glm/gtc/random.hpp>
-#include "utils.cuh"
 
 const int numSceneElements = 4;
 
@@ -11,10 +11,10 @@ __global__ void populateScene(HitableList** hList, Sphere ** hittableBuffer, con
         return;
     }
     
-    hittableBuffer[0] = new Sphere(glm::vec3(0.0f, 0.0f, -1.0f), 0.5f);
-    hittableBuffer[1] = new Sphere(glm::vec3(-1.0f, 0.0f, -1.0f), 0.5f);
-    hittableBuffer[2] = new Sphere(glm::vec3(1.0f, 0.0f, -1.0f), 0.5f);
-    hittableBuffer[3] = new Sphere(glm::vec3(0.0f, -100.5f, -1.0f), 100.0f);
+    hittableBuffer[0] = new Sphere(glm::vec3(0.0f, 0.0f, -1.0f), 0.5f, new Lambertian(glm::vec3(0.1f, 0.2f, 0.5f)));
+    hittableBuffer[1] = new Sphere(glm::vec3(-1.0f, 0.0f, -1.0f), 0.5f, new Metallic(glm::vec3(0.1f, 0.7f, 0.1f)));
+    hittableBuffer[2] = new Sphere(glm::vec3(1.0f, 0.0f, -1.0f), 0.5f, new Metallic(glm::vec3(0.1f, 0.1f, 0.3f)));
+    hittableBuffer[3] = new Sphere(glm::vec3(0.0f, -100.5f, -1.0f), 100.0f, new Lambertian(glm::vec3(0.8f, 0.8f, 0.1f)));
 
     *hList = new HitableList(hittableBuffer, numElements);
 }
@@ -29,9 +29,14 @@ __device__ glm::vec3 rayColor(const Ray& ray, HitableList ** hList, int depth, c
     HitRecord hitRecord;
 
     if(hList[0]->hit(ray, 0.001f, 1000000.0f, hitRecord)){
-        glm::vec3 nextDirection = hitRecord.normal + randomPointOnSphere(state);
-        nextDirection = glm::normalize(nextDirection);
-        return 0.5f * rayColor(Ray(hitRecord.p, nextDirection), hList, depth + 1, state);
+        Ray scattered;
+        glm::vec3 attenuation;
+        if(hitRecord.material->scatter(ray, hitRecord, attenuation, scattered, state)){
+            return attenuation * rayColor(scattered, hList, depth + 1, state);
+        }
+        else{
+            return glm::vec3(0.0f);
+        }
     }
     else{
         glm::vec3 unit_direction = glm::normalize(ray.direction());
@@ -57,7 +62,12 @@ __global__ void render(int2 resolution, float4 * data, Camera camera, HitableLis
     camera.getPixelMultisamplex4(x, y, multiSampleRays, nMultiSamples);
     for(int i = 0; i < nMultiSamples; i++){
         out_color += 1.0f / nMultiSamples * rayColor(multiSampleRays[i], hList, 0, localState);
-    }    
+    }   
+
+    // Gamma correction
+    for(int i = 0; i < 3; i++){
+        out_color[i] = powf(out_color[i], 1.0f / 2.2f);
+    } 
 
     data[(resolution.y - y - 1) * resolution.x + x] = {out_color[0], out_color[1], out_color[2], 1.0f};
 

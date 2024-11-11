@@ -4,8 +4,11 @@
 #include <glm/glm.hpp>
 #include "ray.cuh"
 
+class Material;
+
 class HitRecord{
     public:
+        Material * material;
         glm::vec3 p;
         glm::vec3 normal;
         float t;
@@ -18,7 +21,7 @@ class HitableEntity{
 
 class Sphere : public HitableEntity {
     public:
-        __device__ Sphere(const glm::vec3& _position, float _radius) : position(_position), radius(_radius) {}
+        __device__ Sphere(const glm::vec3& _position, float _radius, Material * _material) : position(_position), radius(_radius), material(_material) {}
 
         __device__ bool hit(const Ray& ray, float t_min, float t_max, HitRecord& hitRecord) const override {
             glm::vec3 oc = position - ray.origin();
@@ -46,12 +49,14 @@ class Sphere : public HitableEntity {
             if(glm::dot(hitRecord.normal, ray.direction()) > 0.0f){
                 hitRecord.normal = -hitRecord.normal;
             }
+            hitRecord.material = material;
             return true;
         }
 
     private:
         glm::vec3 position;
         float radius;
+        Material * material;
 };
 
 class HitableList : public HitableEntity {
