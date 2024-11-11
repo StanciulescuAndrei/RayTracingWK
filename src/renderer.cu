@@ -19,7 +19,7 @@ __global__ void populateScene(HitableList** hList, Sphere ** hittableBuffer, con
     *hList = new HitableList(hittableBuffer, numElements);
 }
 
-const int maxDepth = 12;
+const int maxDepth = 10;
 
 __device__ glm::vec3 rayColor(const Ray& ray, HitableList ** hList, int depth, curandState& state){
     if(depth == maxDepth){
@@ -29,10 +29,7 @@ __device__ glm::vec3 rayColor(const Ray& ray, HitableList ** hList, int depth, c
     HitRecord hitRecord;
 
     if(hList[0]->hit(ray, 0.001f, 1000000.0f, hitRecord)){
-        glm::vec3 nextDirection = randomPointOnSphere(state);
-        if(glm::dot(nextDirection, hitRecord.normal) < 0){
-            nextDirection = -nextDirection;
-        }
+        glm::vec3 nextDirection = hitRecord.normal + randomPointOnSphere(state);
         nextDirection = glm::normalize(nextDirection);
         return 0.5f * rayColor(Ray(hitRecord.p, nextDirection), hList, depth + 1, state);
     }
