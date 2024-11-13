@@ -27,7 +27,7 @@ class Camera{
             return Ray(pos, ray_direction);
         }
 
-        __device__ void getPixelMultisamplex4(int x, int y, Ray * rayBuffer, const int samples){
+        __device__ void getPixelMultisample(int x, int y, Ray * rayBuffer, const int samples){
             glm::vec3 pixel_center;
             glm::vec3 ray_direction;
             int dSamples = sqrtf(static_cast<float>(samples));

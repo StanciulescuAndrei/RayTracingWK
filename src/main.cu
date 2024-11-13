@@ -14,8 +14,8 @@
 #include "renderer.cu"
 
 
-#define SCREEN_WIDTH 800
-#define SCREEN_HEIGHT 600
+#define SCREEN_WIDTH 1200
+#define SCREEN_HEIGHT 900
 
 #define BLOCK 256
 
@@ -115,6 +115,8 @@ int main(){
     cudaDeviceGetLimit(&limit, cudaLimitStackSize);
     printf("Stack limit: %d\n", limit);
     checkCudaErrors(cudaDeviceSetLimit(cudaLimitStackSize, 8 * 1024));
+
+    uint32_t renderIteration = 1;
     
     /* Main program loop */
     while (!glfwWindowShouldClose(window))
@@ -137,7 +139,7 @@ int main(){
         assert(dataPointer != nullptr);
 
         /* Do the rendering here */
-        render<<<SCREEN_HEIGHT * SCREEN_WIDTH / BLOCK + 1, BLOCK>>>({SCREEN_WIDTH, SCREEN_HEIGHT}, dataPointer, camera, hList);
+        render<<<SCREEN_HEIGHT * SCREEN_WIDTH / BLOCK + 1, BLOCK>>>({SCREEN_WIDTH, SCREEN_HEIGHT}, dataPointer, camera, hList, renderIteration);
         checkCudaErrors(cudaDeviceSynchronize());
 
 
@@ -162,6 +164,7 @@ int main(){
         /* Swap buffers and handle GLFW events */
         glfwSwapBuffers(window);
         glfwPollEvents();
+        renderIteration++;
     }
 
     /* Unmap resources and free allocated memory */

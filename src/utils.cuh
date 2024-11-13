@@ -13,5 +13,5 @@ __device__ glm::vec3 randomPointOnSphere(curandState& state){
 
 
 __device__ glm::vec3 reflect(const glm::vec3& v, const glm::vec3& n){
-    return v - 2.0f * glm::dot(v, n) * n; 
+    return glm::normalize(v - 2.0f * glm::dot(v, n) * n); 
 }

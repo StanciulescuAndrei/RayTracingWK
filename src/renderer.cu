@@ -12,8 +12,8 @@ __global__ void populateScene(HitableList** hList, Sphere ** hittableBuffer, con
     }
     
     hittableBuffer[0] = new Sphere(glm::vec3(0.0f, 0.0f, -1.0f), 0.5f, new Lambertian(glm::vec3(0.1f, 0.2f, 0.5f)));
-    hittableBuffer[1] = new Sphere(glm::vec3(-1.0f, 0.0f, -1.0f), 0.5f, new Metallic(glm::vec3(0.1f, 0.7f, 0.1f)));
-    hittableBuffer[2] = new Sphere(glm::vec3(1.0f, 0.0f, -1.0f), 0.5f, new Metallic(glm::vec3(0.1f, 0.1f, 0.3f)));
+    hittableBuffer[1] = new Sphere(glm::vec3(-1.0f, 0.0f, -1.0f), 0.5f, new Metallic(glm::vec3(0.1f, 0.7f, 0.1f), 0.1f));
+    hittableBuffer[2] = new Sphere(glm::vec3(1.0f, 0.0f, -1.0f), 0.5f, new Metallic(glm::vec3(0.1f, 0.1f, 0.3f), 0.0f));
     hittableBuffer[3] = new Sphere(glm::vec3(0.0f, -100.5f, -1.0f), 100.0f, new Lambertian(glm::vec3(0.8f, 0.8f, 0.1f)));
 
     *hList = new HitableList(hittableBuffer, numElements);
@@ -45,7 +45,7 @@ __device__ glm::vec3 rayColor(const Ray& ray, HitableList ** hList, int depth, c
     }
 }
 
-__global__ void render(int2 resolution, float4 * data, Camera camera, HitableList ** hList){
+__global__ void render(int2 resolution, float4 * data, Camera camera, HitableList ** hList, const uint32_t renderIteration){
     uint32_t idx = blockDim.x * blockIdx.x + threadIdx.x;
 
     int x = idx % resolution.x; // Horizontal positioning
@@ -54,12 +54,12 @@ __global__ void render(int2 resolution, float4 * data, Camera camera, HitableLis
     if(y >= resolution.y) return;
 
     curandState localState;
-    curand_init(12345, idx, 0, &localState);
+    curand_init(12345, idx, renderIteration, &localState);
     
     glm::vec3 out_color(0.0f);
-    const int nMultiSamples = 16;
+    const int nMultiSamples = 25;
     Ray multiSampleRays[nMultiSamples];
-    camera.getPixelMultisamplex4(x, y, multiSampleRays, nMultiSamples);
+    camera.getPixelMultisample(x, y, multiSampleRays, nMultiSamples);
     for(int i = 0; i < nMultiSamples; i++){
         out_color += 1.0f / nMultiSamples * rayColor(multiSampleRays[i], hList, 0, localState);
     }   
@@ -69,6 +69,6 @@ __global__ void render(int2 resolution, float4 * data, Camera camera, HitableLis
         out_color[i] = powf(out_color[i], 1.0f / 2.2f);
     } 
 
-    data[(resolution.y - y - 1) * resolution.x + x] = {out_color[0], out_color[1], out_color[2], 1.0f};
+    data[(resolution.y - y - 1) * resolution.x + x] = {out_color[0], out_color[1], out_color[2], 1.0f} ;
 
 }
