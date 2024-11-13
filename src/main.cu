@@ -14,10 +14,10 @@
 #include "renderer.cu"
 
 
-#define SCREEN_WIDTH 1200
-#define SCREEN_HEIGHT 900
+#define SCREEN_WIDTH 640
+#define SCREEN_HEIGHT 480
 
-#define BLOCK 256
+#define BLOCK 512
 
 static void error_callback(int error, const char* description)
 {
