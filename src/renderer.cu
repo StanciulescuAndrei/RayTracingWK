@@ -19,6 +19,17 @@ __global__ void populateScene(HitableList** hList, Sphere ** hittableBuffer, con
     *hList = new HitableList(hittableBuffer, numElements);
 }
 
+__global__ void cleanupScene(HitableList** hList, Sphere ** hittableBuffer){
+    if(threadIdx.x != 0 || blockIdx.x != 0){
+        return;
+    }
+    for(int i = 0; i < numSceneElements; i++){
+        hittableBuffer[i]->deleteMaterial();
+        delete hittableBuffer[i];
+    }
+    delete *hList;
+}
+
 const int maxDepth = 10;
 
 __device__ glm::vec3 rayColor(const Ray& ray, HitableList ** hList, int depth, curandState& state){

@@ -53,6 +53,10 @@ class Sphere : public HitableEntity {
             return true;
         }
 
+        __device__ void deleteMaterial(){
+            delete material;
+        }
+
     private:
         glm::vec3 position;
         float radius;

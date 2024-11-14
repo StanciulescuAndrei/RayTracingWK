@@ -167,11 +167,17 @@ int main(){
         renderIteration++;
     }
 
+    cleanupScene<<<1, 1>>>(hList, hittableBuffer);
+    checkCudaErrors(cudaDeviceSynchronize());
+
+
     /* Unmap resources and free allocated memory */
     checkCudaErrors(cudaGraphicsUnregisterResource(cuda_pbo_resource));
     glDeleteTextures(1, &texId);
     glDeleteBuffers(1, &pboId);
     cudaFree(d_pbo_buffer);
+    cudaFree(hList);
+    cudaFree(hittableBuffer);
 
     delete [] imageData;
 
