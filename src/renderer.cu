@@ -30,7 +30,7 @@ __global__ void cleanupScene(HitableList** hList, Sphere ** hittableBuffer){
     delete *hList;
 }
 
-const int maxDepth = 10;
+const int maxDepth = 15;
 
 __device__ glm::vec3 rayColor(const Ray& ray, HitableList ** hList, int depth, curandState& state){
     if(depth == maxDepth){
@@ -66,9 +66,16 @@ __global__ void render(int2 resolution, float4 * data, Camera camera, HitableLis
 
     curandState localState;
     curand_init(12345, idx, renderIteration, &localState);
+
+    const size_t numEntities = hList[0]->getNumberOfEntities();
+    for(size_t i = 0; i < numEntities - 1; i++){
+        glm::vec3 p = hList[0]->getEntity(i)->getPosition();
+        p.y = sin((float)(renderIteration/2.0f + i)) * 0.3f + 0.25f;
+        hList[0]->getEntity(i)->updatePosition(p);
+    }
     
     glm::vec3 out_color(0.0f);
-    const int nMultiSamples = 25;
+    const int nMultiSamples = 36;
     Ray multiSampleRays[nMultiSamples];
     camera.getPixelMultisample(x, y, multiSampleRays, nMultiSamples);
     for(int i = 0; i < nMultiSamples; i++){

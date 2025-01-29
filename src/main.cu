@@ -102,7 +102,7 @@ int main(){
     checkCudaErrors(cudaMalloc(&d_pbo_buffer, 4 * SCREEN_HEIGHT * SCREEN_WIDTH * sizeof(float)));
     checkCudaErrors(cudaGraphicsGLRegisterBuffer(&cuda_pbo_resource, pboId, cudaGraphicsRegisterFlagsNone));
 
-    Camera camera(glm::vec3(0.0f, 0.0f, 0.0f), 1.0f, SCREEN_WIDTH, SCREEN_HEIGHT);
+    Camera camera(glm::vec3(0.0f, 0.0f, 0.5f), 0.8f, SCREEN_WIDTH, SCREEN_HEIGHT);
 
     HitableList ** hList;
     Sphere ** hittableBuffer;

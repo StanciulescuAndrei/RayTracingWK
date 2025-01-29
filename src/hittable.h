@@ -53,6 +53,14 @@ class Sphere : public HitableEntity {
             return true;
         }
 
+        __device__ void updatePosition(glm::vec3 & newPosition){
+            position = newPosition;
+        }
+
+        __device__ glm::vec3 getPosition(){
+            return position;
+        }
+
         __device__ void deleteMaterial(){
             delete material;
         }
@@ -66,7 +74,7 @@ class Sphere : public HitableEntity {
 class HitableList : public HitableEntity {
     public:     
 
-    __device__ __host__ HitableList(Sphere ** dataBuffer, const int size){
+    __device__ __host__ HitableList(Sphere ** dataBuffer, const size_t size){
         hittableEntitiesList = dataBuffer;
         numEntities = size;
     }
@@ -76,9 +84,20 @@ class HitableList : public HitableEntity {
             return;
         }
         
-        HitRecord hRec;
-        Ray r;
         hittableEntitiesList[idx] = hEntity;
+    }
+
+    __device__ size_t getNumberOfEntities(){
+        return numEntities;
+    }
+
+    __device__ Sphere * getEntity(int idx){
+        if(idx < numEntities){
+            return hittableEntitiesList[idx];
+        }
+        else{
+            return nullptr;
+        }
     }
 
     __device__ bool hit(const Ray& ray, float t_min, float t_max, HitRecord& hitRecord) const override {
@@ -96,7 +115,7 @@ class HitableList : public HitableEntity {
     }
 
     private:
-        int numEntities;
+        size_t numEntities;
         Sphere ** hittableEntitiesList;
     
 };
